@@ -62,12 +62,27 @@ public class NearestNeighbours {
 
         Set<Integer> movies = predictableMovies(user,neighbours);
         for (Integer movie : movies) {
-            double predicted = NearestNeighbours.getPredictedRating(user, movie, users, 0.35, 25, new Pearson());
+            double predicted = NearestNeighbours.getPredictedRating(user, movie, users, minimalSimilarity, limit, new Pearson());
             movieList.add(new Item(movie,predicted));
         }
         Collections.sort(movieList, (Item i2, Item i1) -> i1.getRating().compareTo(i2.getRating()));
         return movieList.subList(0,amountofMovies);
     }
+    public static List<Item> movieSuggestionWithMinimumRated(User user,Collection<User> users,int amountofMovies, int minimumRated,double minimalSimilarity,int limit, Calculator calculator){
+        List<Neighbour> neighbours = getNearestNeighbours(user,users,minimalSimilarity,limit,calculator);
+        List<Item> movieList = new ArrayList<>();
+
+        Set<Integer> movies = predictableMovies(user,neighbours);
+        for (Integer movie : movies) {
+            if(hasMinimumAmountRatings(movie,neighbours,minimumRated)){
+                double predicted = NearestNeighbours.getPredictedRating(user, movie, users, minimalSimilarity, limit, new Pearson());
+                movieList.add(new Item(movie,predicted));
+            }
+        }
+        Collections.sort(movieList, (Item i2, Item i1) -> i1.getRating().compareTo(i2.getRating()));
+        return movieList.subList(0,amountofMovies);
+    }
+
     private static Set<Integer> predictableMovies(User user,List<Neighbour> neighbours){
         Set<Integer> movies = new HashSet<>();
         for (Neighbour neighbour : neighbours) {
@@ -75,5 +90,15 @@ public class NearestNeighbours {
         }
         movies.removeAll(user.getMovieRatings().keySet());
         return movies;
+    }
+    private static boolean hasMinimumAmountRatings(int movie,List<Neighbour> neighbours,int minimumRated){
+        int count = 0;
+        for (Neighbour neighbour : neighbours) {
+            Item item = neighbour.getUser().getMovieRatings().get(movie);
+            if(item != null){
+                count++;
+            }
+        }
+        return count > minimumRated;
     }
 }

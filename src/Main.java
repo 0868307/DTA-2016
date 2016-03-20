@@ -1,8 +1,10 @@
 import calculator.Cosine;
 import calculator.Euclidean;
 import calculator.Pearson;
+import model.Item;
 import model.User;
 
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -41,8 +43,18 @@ public class Main {
 
         System.out.println("==================================");
         map = DataReader.loadLargeDataset();
-        System.out.println("report template opdracht 10");
-        System.out.println(NearestNeighbours.movieSuggestion(map.get(184L), map.values(), 10, 0.35, 25, new Pearson()));
+        System.out.println("report template opdracht 11");
+        List<Item> itemlist =NearestNeighbours.movieSuggestion(map.get(186L), map.values(), 8, 0.35, 25, new Pearson());
+        for (int suggestionNumber = 0; suggestionNumber < itemlist.size(); suggestionNumber++) {
+            System.out.println("Recommendation  "+(suggestionNumber+1)+" : "+ itemlist.get(suggestionNumber).getId() + " with predicted rating: "+ itemlist.get(suggestionNumber).getRating());
+        }
+        System.out.println("==================================");
+        System.out.println("report template opdracht 12");
+        itemlist =NearestNeighbours.movieSuggestionWithMinimumRated(map.get(186L), map.values(), 8, 3, 0.35, 25, new Pearson());
+        for (int suggestionNumber = 0; suggestionNumber < itemlist.size(); suggestionNumber++) {
+            System.out.println("Recommendation  "+(suggestionNumber+1)+" : "+ itemlist.get(suggestionNumber).getId() + " with predicted rating: "+ itemlist.get(suggestionNumber).getRating());
+        }
+
         System.out.println("==================================");
 
 
