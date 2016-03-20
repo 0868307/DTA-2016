@@ -19,7 +19,7 @@ public class NearestNeighbours {
      * @param limit the amount of neighbours to return ( if limit == 0 return all neighbours)
      * @return
      */
-    public static List<Neighbour> getNearestNeighbours(User user, Collection<User> users,double minimalSimilarity,int limit, Calculator calculator){
+    public List<Neighbour> getNearestNeighbours(User user, Collection<User> users,double minimalSimilarity,int limit, Calculator calculator){
         List<Neighbour> neighbours = new ArrayList<>();
         for (User neighbour : users) {
             if(user != neighbour){
@@ -40,7 +40,17 @@ public class NearestNeighbours {
         return neighbours.subList(0,limit);
     }
 
-    public static double getPredictedRating(User user,int movie,Collection<User> users,double minimalSimilarity,int limit, Calculator calculator){
+    /**
+     * function to get a prediction for the rating of a user
+     * @param user the user to predict the rating for
+     * @param movie the movie of which the rating should be predicted
+     * @param users all the users
+     * @param minimalSimilarity minimum threshold
+     * @param limit limit of the amount of values to use
+     * @param calculator which algorithm is going to be used
+     * @return
+     */
+    public double getPredictedRating(User user,int movie,Collection<User> users,double minimalSimilarity,int limit, Calculator calculator){
         List<Neighbour> neighbours = getNearestNeighbours(user,users,minimalSimilarity,limit,calculator);
         double combinedSimilarity = 0;
         double sumRatingSim = 0;
@@ -56,26 +66,49 @@ public class NearestNeighbours {
         }
         return sumRatingSim/ combinedSimilarity;
     }
-    public static List<Item> movieSuggestion(User user,Collection<User> users,int amountofMovies,double minimalSimilarity,int limit, Calculator calculator){
+
+    /**
+     * Gives a suggestion which movie is best suited to you to watch which you havent watched yet
+     * @param user the user to give a suggestion
+     * @param users all the users
+     * @param amountofMovies how much movies should be suggested
+     * @param minimalSimilarity minimum threshold
+     * @param limit limit of the amount of values to use
+     * @param calculator which algorithm is going to be used
+     * @return
+     */
+    public List<Item> movieSuggestion(User user,Collection<User> users,int amountofMovies,double minimalSimilarity,int limit, Calculator calculator){
         List<Neighbour> neighbours = getNearestNeighbours(user,users,minimalSimilarity,limit,calculator);
         List<Item> movieList = new ArrayList<>();
 
         Set<Integer> movies = predictableMovies(user,neighbours);
         for (Integer movie : movies) {
-            double predicted = NearestNeighbours.getPredictedRating(user, movie, users, minimalSimilarity, limit, new Pearson());
+            double predicted = getPredictedRating(user, movie, users, minimalSimilarity, limit, calculator);
             movieList.add(new Item(movie,predicted));
         }
         Collections.sort(movieList, (Item i2, Item i1) -> i1.getRating().compareTo(i2.getRating()));
         return movieList.subList(0,amountofMovies);
     }
-    public static List<Item> movieSuggestionWithMinimumRated(User user,Collection<User> users,int amountofMovies, int minimumRated,double minimalSimilarity,int limit, Calculator calculator){
+
+    /**
+     * Gives a suggestion which movie is best suited to you to watch which you havent watched yet
+     * @param user the user to give a suggestion
+     * @param users all the users
+     * @param amountofMovies how much movies should be suggested
+     * @param minimalSimilarity minimum threshold
+     * @param limit limit of the amount of values to use
+     * @param calculator which algorithm is going to be used
+     * @param minimumRated how much the movie has to be rated before it will count
+     * @return
+     */
+    public List<Item> movieSuggestionWithMinimumRated(User user,Collection<User> users,int amountofMovies, int minimumRated,double minimalSimilarity,int limit, Calculator calculator){
         List<Neighbour> neighbours = getNearestNeighbours(user,users,minimalSimilarity,limit,calculator);
         List<Item> movieList = new ArrayList<>();
 
         Set<Integer> movies = predictableMovies(user,neighbours);
         for (Integer movie : movies) {
             if(hasMinimumAmountRatings(movie,neighbours,minimumRated)){
-                double predicted = NearestNeighbours.getPredictedRating(user, movie, users, minimalSimilarity, limit, new Pearson());
+                double predicted = getPredictedRating(user, movie, users, minimalSimilarity, limit, calculator);
                 movieList.add(new Item(movie,predicted));
             }
         }
@@ -83,7 +116,13 @@ public class NearestNeighbours {
         return movieList.subList(0,amountofMovies);
     }
 
-    private static Set<Integer> predictableMovies(User user,List<Neighbour> neighbours){
+    /**
+     * returns a set of movies the user has not seen and someone else has seen
+     * @param user the user for which to find new movies
+     * @param neighbours the nearest neigbours
+     * @return
+     */
+    private Set<Integer> predictableMovies(User user,List<Neighbour> neighbours){
         Set<Integer> movies = new HashSet<>();
         for (Neighbour neighbour : neighbours) {
             movies.addAll(neighbour.getUser().getMovieRatings().keySet());
@@ -91,7 +130,15 @@ public class NearestNeighbours {
         movies.removeAll(user.getMovieRatings().keySet());
         return movies;
     }
-    private static boolean hasMinimumAmountRatings(int movie,List<Neighbour> neighbours,int minimumRated){
+
+    /**
+     * returns whether a movie has enough ratings or not
+     * @param movie the movie
+     * @param neighbours the nearest neighbours
+     * @param minimumRated the amount of rating a movie has to have
+     * @return
+     */
+    private boolean hasMinimumAmountRatings(int movie,List<Neighbour> neighbours,int minimumRated){
         int count = 0;
         for (Neighbour neighbour : neighbours) {
             Item item = neighbour.getUser().getMovieRatings().get(movie);
@@ -99,6 +146,6 @@ public class NearestNeighbours {
                 count++;
             }
         }
-        return count > minimumRated;
+        return count >= minimumRated;
     }
 }
